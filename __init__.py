@@ -199,8 +199,9 @@ class Message:
 
         try:
             response = self.sendgrid_client.send(message=message)
+            # TODO log or store a record of sending this message
             if response.status_code >= 300:
-                log.critial(f"SENDGRID-SEND-FAILURE: {message}")
+                log.critial(f"SENDGRID-SEND-FAILURE: {response.body}")
             print(response.body)
             print(response.headers)
         except Exception as e:

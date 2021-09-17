@@ -214,10 +214,3 @@ class Message:
         """Backward compatibility with an old emailer"""
         return self.send()
 
-
-
-
-
-
-if __name__ == "__main__":
-    print("main")

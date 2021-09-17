@@ -161,7 +161,6 @@ class Message:
             if hasattr(self.to, "__iter__"):
                 redirectStr = "Redirected from {0}:: ".format(", ".join(self.to))
             elif isinstance(self.subject, basestring):
-                """This should cover both python2 and python3"""
                 redirectStr = "Redirected from {0}:: ".format(self.to)
 
             subRE = re.compile(r"^Redirected\ from.*::")
@@ -170,14 +169,13 @@ class Message:
             subject = redirectStr + subRE.sub("", self.subject)
             self.subject = subject
             self.to = emailRedirect
-        plain_text_content =  "This is a test"
-        html_content = HtmlContent(self.html)
+
         message = Mail(
             from_email=self.from_email,
-            to_emails=self.To,
-            subject=self.Subject,
-            plain_text_content=self.Body,
-            html_content=html_content)
+            to_emails=self.to,
+            subject=self.subject,
+            plain_text_content=self.body,
+            html_content=self.html)
 
 
         # message.set_headers({'X-Priority': '2'})

@@ -1,5 +1,6 @@
 import base64
 import re
+import traceback
 from pdb import set_trace as debug
 import urllib
 import os
@@ -9,6 +10,8 @@ from django.utils.text import slugify
 from markdownify import markdownify
 from sendgrid import SendGridAPIClient, Disposition, FileName, FileType, FileContent, ContentId
 from sendgrid.helpers.mail import From, To, Subject, PlainTextContent, HtmlContent, Mail, Attachment
+import logging
+log = logging.getLogger(__name__)
 
 try:
   basestring
@@ -16,8 +19,6 @@ except NameError:
   basestring = str
 
 emailRedirect = settings.EMAIL_REDIRECT
-
-
 
 
 class Message:
@@ -63,6 +64,8 @@ class Message:
         self.subject = ""
         self.to = ""
         self.attachments = []
+        if not settings.SENDGRID_API_KEY:
+            raise Exception("SENDGRID_API_KEY not defined in .env when create a Message()")
         self.sendgrid_client = sendgrid_client = SendGridAPIClient(api_key=settings.SENDGRID_API_KEY)
 
 
@@ -77,10 +80,14 @@ class Message:
             subject = Subject
         Html = kwargs.pop("Html", kwargs.pop("html", None))
 
+        Body = kwargs.pop("Body", None)
+        if Body:
+            body = Body
+
         init_headers = kwargs.pop("headers", {})
         init_headers.update(self.default_headers)
         self.__dict__.update(locals())
-        super().__init__(*args, **kwargs)
+        super().__init__()
 
     def __str__(self):
         return "{0} : {1}".format(str(self.to), self.subject)
@@ -169,7 +176,7 @@ class Message:
             from_email=self.from_email,
             to_emails=self.To,
             subject=self.Subject,
-            plain_text_content=self.body,
+            plain_text_content=self.Body,
             html_content=html_content)
 
 
@@ -194,11 +201,14 @@ class Message:
 
         try:
             response = self.sendgrid_client.send(message=message)
-            print(response.status_code)
+            if response.status_code >= 300:
+                log.critial(f"SENDGRID-SEND-FAILURE: {message}")
             print(response.body)
             print(response.headers)
         except Exception as e:
-            print(e)
+            tb = traceback.format_exc()
+            error_message = f"{tb}\n\n{e.body}: "
+            log.exception(error_message)
 
 
     def snlSend(self):

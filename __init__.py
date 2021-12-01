@@ -2,7 +2,6 @@ import base64
 import re
 import traceback
 from pdb import set_trace as debug
-import urllib
 import os
 import markdown2
 from django.conf import settings
@@ -14,9 +13,9 @@ import logging
 log = logging.getLogger(__name__)
 
 try:
-  basestring
+    basestring
 except NameError:
-  basestring = str
+    basestring = str
 
 emailRedirect = settings.EMAIL_REDIRECT
 

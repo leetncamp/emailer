@@ -64,8 +64,8 @@ class Message:
         self.to = ""
         self.attachments = []
         if not settings.SENDGRID_API_KEY:
-            raise Exception("SENDGRID_API_KEY not defined in .env when create a Message()")
-        self.sendgrid_client = sendgrid_client = SendGridAPIClient(api_key=settings.SENDGRID_API_KEY)
+            raise Exception("SENDGRID_API_KEY not defined in .env when sending a Message()")
+        self.sendgrid_client = SendGridAPIClient(api_key=settings.SENDGRID_API_KEY)
 
 
         To = kwargs.pop("To", None)
@@ -102,6 +102,9 @@ class Message:
     def attach(self, filepath_or_object):
         self.attachments.append(filepath_or_object)
 
+    def attach_file(self, filepath_or_object):
+        self.attach(filepath_or_object)
+
 
     def send(self, **kwargs):
 
@@ -133,7 +136,7 @@ class Message:
                 self.body = markdownify(self.html)
             self.attach_alternative(self.html, "text/html")
 
-        if self.body != "" and ((hasattr(self, "html") and self.html == "") or not hasattr(self, "html")):
+        if self.body and ((hasattr(self, "Html") and self.Html == "") or not hasattr(self, "Html")):
             # Body and no html
             self.html = markdown2.markdown(self.body)
             # self.attach_alternative(self.html, "text/html")  # TODO attache the alternative some other way
@@ -151,13 +154,13 @@ class Message:
 
             self.from_email = settings.EMAIL_DEFAULT_FROM
 
-        if not isinstance(self.to, list):
+        if not hasattr(self.to, '__iter__'):
             # This could be a single email or a comma separated list of emails.
             self.to = self.to.split(
                 ",")  # This will make a list out of a string without commas, e.g. 'support@neurips.cc'.split(","") returns ['support@neurips.cc']
 
         if emailRedirect:
-            if hasattr(self.to, "__iter__"):
+            if hasattr(self.to, "__iter__") and not isinstance(self.to, basestring):
                 redirectStr = "Redirected from {0}:: ".format(", ".join(self.to))
             elif isinstance(self.subject, basestring):
                 redirectStr = "Redirected from {0}:: ".format(self.to)
@@ -169,12 +172,15 @@ class Message:
             self.subject = subject
             self.to = emailRedirect
 
+        if hasattr(self.to, "__iter__") and not isinstance(self.to, basestring):
+            self.to = ",".join(self.to)
+
         message = Mail(
             from_email=self.from_email,
             to_emails=self.to,
             subject=self.subject,
-            plain_text_content=self.body,
-            html_content=self.html)
+            plain_text_content=self.Body,
+            html_content=self.Html)
 
 
         # message.set_headers({'X-Priority': '2'})
@@ -198,15 +204,16 @@ class Message:
 
         try:
             response = self.sendgrid_client.send(message=message)
+            debug()
             # TODO log or store a record of sending this message
-            if response.status_code >= 300:
-                log.critial(f"SENDGRID-SEND-FAILURE: {response.body}")
-            print(response.body)
-            print(response.headers)
+            if response._status_code >= 300:
+                log.critial(f"SENDGRID-SEND-FAILURE: {response.subject}")
+            return {'code': response._status_code}
         except Exception as e:
             tb = traceback.format_exc()
             error_message = f"{tb}\n\n{e.body}: "
             log.exception(error_message)
+            return {"code": 1000, "error": tb}
 
 
     def snlSend(self):

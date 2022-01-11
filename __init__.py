@@ -204,7 +204,6 @@ class Message:
 
         try:
             response = self.sendgrid_client.send(message=message)
-            debug()
             # TODO log or store a record of sending this message
             if response._status_code >= 300:
                 log.critial(f"SENDGRID-SEND-FAILURE: {response.subject}")

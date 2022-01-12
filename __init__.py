@@ -11,7 +11,7 @@ from sendgrid import SendGridAPIClient, Disposition, FileName, FileType, FileCon
 from sendgrid.helpers.mail import From, To, Subject, PlainTextContent, HtmlContent, Mail, Attachment
 import logging
 log = logging.getLogger(__name__)
-
+ 
 try:
     basestring
 except NameError:

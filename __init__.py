@@ -159,6 +159,11 @@ class Message:
             self.to = self.to.split(
                 ",")  # This will make a list out of a string without commas, e.g. 'support@neurips.cc'.split(","") returns ['support@neurips.cc']
 
+        if not self.Html:
+            self.Html = "&nbsp;"
+        if not self.Body:
+            self.Body = " "
+
         if emailRedirect:
             if hasattr(self.to, "__iter__") and not isinstance(self.to, basestring):
                 redirectStr = "Redirected from {0}:: ".format(", ".join(self.to))

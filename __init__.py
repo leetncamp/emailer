@@ -82,10 +82,11 @@ class Message:
         Body = kwargs.pop("Body", None)
         if Body:
             body = Body
-
+        Replyto = kwargs.pop("Replyto", None)
         init_headers = kwargs.pop("headers", {})
         init_headers.update(self.default_headers)
         self.__dict__.update(locals())
+
         super().__init__()
 
     def __str__(self):
@@ -136,13 +137,14 @@ class Message:
                 self.body = markdownify(self.html)
             self.attach_alternative(self.html, "text/html")
 
-        if self.body and ((hasattr(self, "Html") and self.Html == "") or not hasattr(self, "Html")):
-            # Body and no html
-            self.html = markdown2.markdown(self.body)
+        if self.body and ((hasattr(self, "Html") and (self.Html == "" or self.Html is None)) or not hasattr(self, "Html")):
+            # Body and no Html
+            self.Html = markdown2.markdown(self.body)
             # self.attach_alternative(self.html, "text/html")  # TODO attache the alternative some other way
 
         if hasattr(self.from_email, "__getitem__") and not isinstance(self.from_email, str):
-            # The from is iterable. We can't have that. It's possible a queryset passed in from getting sponsor handlers. We must pick just one or if the query is empty, then ""
+            # The 'from' is iterable. We can't have that. It's possible a queryset passed
+            # in from getting sponsor handlers. We must pick just one or if the query is empty, then
             if len(self.from_email) == 0:
                 self.from_email = ""  # This will get replaced with a do-not-reply below
             else:
@@ -185,7 +187,10 @@ class Message:
             to_emails=self.to,
             subject=self.subject,
             plain_text_content=self.Body,
-            html_content=self.Html)
+            html_content=self.Html,
+        )
+        if hasattr(self, "Replyto") and self.Replyto and isinstance(self.Replyto, basestring):
+            message.reply_to = self.Replyto
 
 
         # message.set_headers({'X-Priority': '2'})

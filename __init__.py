@@ -109,8 +109,11 @@ class Message:
 
     def send(self, **kwargs):
 
-        """First, try to be compatible with the old To, From, and Html attributes.  The consider are we redirecting
+        """First, try to be compatible with the old To, From, and Html attributes.  Then consider are we redirecting
         email? """
+
+        if not settings.EMAIL_DEFAULT_FROM:  # The raise below would happen if EMAIL_DEFAULT_FROM were defined as None or ""
+            raise Exception("Define settings.EMAIL_DEFAULT_FROM")
 
         if hasattr(self, "To") and (not hasattr(self, "to") or self.to == []):
             self.to = self.To
@@ -180,6 +183,7 @@ class Message:
             self.to = emailRedirect
 
         if hasattr(self.to, "__iter__") and not isinstance(self.to, basestring):
+            # if the To field is a list, convert it into a comma separated list of email addresses as a string.
             self.to = ",".join(self.to)
 
         message = Mail(

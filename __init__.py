@@ -170,10 +170,11 @@ class Message:
             self.Body = " "
 
         if emailRedirect:
-            if hasattr(self.to, "__iter__") and not isinstance(self.to, basestring):
-                redirectStr = "Redirected from {0}:: ".format(", ".join(self.to))
+            email_to = self.__dict__.get("To", self.__dict__.get("to"))
+            if email_to and not isinstance(self.to, basestring):
+                redirectStr = "Redirected from {0}:: ".format(", ".join(email_to))
             elif isinstance(self.subject, basestring):
-                redirectStr = "Redirected from {0}:: ".format(self.to)
+                redirectStr = "Redirected from {0}:: ".format(email_to)
 
             subRE = re.compile(r"^Redirected\ from.*::")
             if self.subject is None:

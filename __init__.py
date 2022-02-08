@@ -52,6 +52,7 @@ class Message:
     }
 
     def __init__(self, *args, **kwargs):
+        """Initialize all variables"""
         self.To = ""
         self.From = ""
         self.Subject = ""
@@ -115,8 +116,16 @@ class Message:
         if not settings.EMAIL_DEFAULT_FROM:  # The raise below would happen if EMAIL_DEFAULT_FROM were defined as None or ""
             raise Exception("Define settings.EMAIL_DEFAULT_FROM")
 
+        if hasattr(self.To, "__iter__") and not isinstance(self.To, basestring):
+            # if the To field is a list, convert it into a comma separated list of email addresses as a string.
+            self.To = ",".join(self.To)
+
         if hasattr(self, "To") and (not hasattr(self, "to") or self.to == []):
             self.to = self.To
+
+        if hasattr(self.to, "__iter__") and not isinstance(self.to, basestring):
+            # if the To field is a list, convert it into a comma separated list of email addresses as a string.
+            self.to = ",".join(self.to)
 
         if hasattr(self, "From") and self.from_email == settings.EMAIL_DEFAULT_FROM:
             """When we call super in __init__, if no from_email is available, the default gets filled in at init time.
@@ -183,9 +192,6 @@ class Message:
             self.subject = subject
             self.to = emailRedirect
 
-        if hasattr(self.to, "__iter__") and not isinstance(self.to, basestring):
-            # if the To field is a list, convert it into a comma separated list of email addresses as a string.
-            self.to = ",".join(self.to)
 
         message = Mail(
             from_email=self.from_email,

@@ -192,7 +192,6 @@ class Message:
             self.subject = subject
             self.to = emailRedirect
 
-        debug()
         message = Mail(
             from_email=self.from_email,
             to_emails=self.to,

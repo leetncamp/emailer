@@ -160,10 +160,15 @@ class Message:
 
             self.from_email = settings.EMAIL_DEFAULT_FROM
 
-        if not hasattr(self.to, '__iter__'):
-            # This could be a single email or a comma separated list of emails.
-            self.to = self.to.split(
-                ",")  # This will make a list out of a string without commas, e.g. 'support@neurips.cc'.split(","") returns ['support@neurips.cc']
+        if isinstance(self.to, tuple) and len(self.to) == 1:
+            """A tuple of email addresses of length 1 will cause a sendgrid failure. Change this ('bob@gmail.com',)
+             to 'bob@gmail.com"""
+            self.to = self.to[0]
+
+        #if not hasattr(self.to, '__iter__'):
+        #    # This could be a single email or a comma separated list of emails.
+        #    self.to = self.to.split(
+        #        ",")  # This will make a list out of a string without commas, e.g. 'support@neurips.cc'.split(","") returns ['support@neurips.cc']
 
         if not self.Html:
             self.Html = "&nbsp;"

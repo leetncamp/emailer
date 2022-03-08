@@ -52,7 +52,6 @@ class Message:
     }
 
     def __init__(self, *args, **kwargs):
-        debug()
         """Initialize all variables"""
         self.To = ""
         self.From = ""
@@ -175,7 +174,7 @@ class Message:
             self.Html = "&nbsp;"
         if not self.Body:
             self.Body = " "
-        emailRedirect = None
+
 
         if emailRedirect:
             email_to = self.__dict__.get("To", self.__dict__.get("to"))

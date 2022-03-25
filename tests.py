@@ -65,7 +65,7 @@ if hold:
     msg = Message(to=recipients[0:1], Subject=subject)
     result = msg.send(emailRedirect=None)
 
-    subject = "5. Testing Html with no body"
+    subject = "5. Testing Html with no body and multiple recipients"
     print(subject)
     msg = Message(to=recipients,
                   Subject=subject,
@@ -127,19 +127,19 @@ if hold:
     msg.attach(open("emailer/test_image2.jpg", 'rb'))
     result = msg.send(emailRedirect=None)
 
-    subject = '12. Testing comma separated list of emails in To'
-    print(subject)
-    recipients = ",".join(recipients)
-    msg = Message(to=recipients,
-                  Subject=subject,
-                  Body=f"The recipients were {recipients}"
-                  )
-    result = msg.send(emailRedirect=None)
+subject = '12. Testing comma separated list of emails in To'
+print(subject)
+comma_recipients = ",".join(recipients)
+msg = Message(to=comma_recipients,
+              Subject=subject,
+              Body=f"The recipients were {recipients}"
+              )
+result = msg.send(emailRedirect=None)
 
 subject = '13. Testing space separated list of emails in To'
 print(subject)
-recipients = " ".join(recipients)
-msg = Message(to=recipients,
+space_recipients = " ".join(recipients)
+msg = Message(to=space_recipients,
               Subject=subject,
               Body=f"The recipients were {recipients}"
               )

@@ -20,7 +20,6 @@ except NameError:
 emailRedirect = settings.EMAIL_REDIRECT
 
 
-
 class Message:
     """The old messages class used upper case field names. To be drop in compatible, I'm supporting that here. Omit
     'From' and it will be a do-not-reply@domain rather than the default django setting found in settings.py """
@@ -202,7 +201,7 @@ class Message:
             "to_emails": self.to,
             "subject": self.subject,
         }
-
+        log.info(f"EMAILER sent a message with the following header info: {info}")
         if self.Html:
             info["html_content"] = self.Html
         if self.Body:

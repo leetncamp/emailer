@@ -240,7 +240,6 @@ class Message:
             message.add_attachment(attachment)
 
         try:
-            raise Exception("This is a test exception")
             response = self.sendgrid_client.send(message=message)
             # TODO log or store a record of sending this message
             if response._status_code >= 300:

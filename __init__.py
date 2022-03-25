@@ -68,21 +68,22 @@ class Message:
             raise Exception("SENDGRID_API_KEY not defined in .env when sending a Message()")
         self.sendgrid_client = SendGridAPIClient(api_key=settings.SENDGRID_API_KEY)
 
-
         To = kwargs.pop("To", None)
         if To:
             to = To
+        else:
+            to = kwargs.pop("to", None)
+
         From = kwargs.pop("From", None)
         if From:
             from_email = From
         Subject = kwargs.pop("Subject", None)
         if Subject:
             subject = Subject
-        Html = kwargs.pop("Html", kwargs.pop("html", None))
+        Html = kwargs.pop("Html", kwargs.pop("html", ""))
 
-        Body = kwargs.pop("Body", None)
-        if Body:
-            body = Body
+        Body = kwargs.pop("Body", kwargs.pop("body", ""))
+
         Replyto = kwargs.pop("Replyto", None)
         init_headers = kwargs.pop("headers", {})
         init_headers.update(self.default_headers)
@@ -110,14 +111,27 @@ class Message:
 
     def send(self, **kwargs):
 
-        """First, try to be compatible with the old To, From, and Html attributes.  Then consider are we redirecting
+        # if we passed in an emailRedirect in the kwargs, use it to override the one we calculated above in the
+        # global context
+
+
+        if self.html and not self.Html:
+            self.Html = self.html
+
+
+        if "emailRedirect" in kwargs.keys():
+            emailRedirect = kwargs.get("emailRedirect")
+
+        """First, try to be compatible with the old To, From, and Html attributes.  Then consider if are we redirecting
         email? """
 
         if not settings.EMAIL_DEFAULT_FROM:  # The raise below would happen if EMAIL_DEFAULT_FROM were defined as None or ""
             raise Exception("Define settings.EMAIL_DEFAULT_FROM")
 
-        if hasattr(self, "To") and (not hasattr(self, "to") or self.to == []):
+        if hasattr(self, "To") and (not hasattr(self, "to") or (not self.to)):
             self.to = self.To
+
+
 
         if hasattr(self, "From") and self.from_email == settings.EMAIL_DEFAULT_FROM:
             """When we call super in __init__, if no from_email is available, the default gets filled in at init time.
@@ -131,20 +145,13 @@ class Message:
         if hasattr(self, "Body") and self.body == "":
             self.body = self.Body
 
-        if hasattr(self, 'Html') and not hasattr(self, "html"):
+        if hasattr(self, 'html') and not hasattr(self, "Html"):
             self.html = self.Html
 
-        if hasattr(self, "html") and (self.html != "" and self.html is not None):
+        if self.Html != "" and self.Body == "":
+            # html and no body
+            self.Body = markdownify(self.Html)
 
-            if self.body == "":
-                # html and no body
-                self.body = markdownify(self.html)
-            self.attach_alternative(self.html, "text/html")
-
-        if self.body and ((hasattr(self, "Html") and (self.Html == "" or self.Html is None)) or not hasattr(self, "Html")):
-            # Body and no Html
-            self.Html = markdown2.markdown(self.body)
-            # self.attach_alternative(self.html, "text/html")  # TODO attache the alternative some other way
 
         if hasattr(self.from_email, "__getitem__") and not isinstance(self.from_email, str):
             # The 'from' is iterable. We can't have that. It's possible a queryset passed
@@ -165,17 +172,6 @@ class Message:
              to 'bob@gmail.com"""
             self.to = self.to[0]
 
-        #if not hasattr(self.to, '__iter__'):
-        #    # This could be a single email or a comma separated list of emails.
-        #    self.to = self.to.split(
-        #        ",")  # This will make a list out of a string without commas, e.g. 'support@neurips.cc'.split(","") returns ['support@neurips.cc']
-
-        if not self.Html:
-            self.Html = "&nbsp;"
-        if not self.Body:
-            self.Body = " "
-
-
         if emailRedirect:
             email_to = self.__dict__.get("To", self.__dict__.get("to"))
             if email_to and not isinstance(self.to, basestring):
@@ -195,32 +191,50 @@ class Message:
             # if self.to is a comma separated list of emails, split them into a list
             self.to = [i.strip() for i in self.to.split(",")]
 
-        message = Mail(
-            from_email=self.from_email,
-            to_emails=self.to,
-            subject=self.subject,
-            plain_text_content=self.Body,
-            html_content=self.Html,
-        )
+        if hasattr(self.to, "__iter__") and isinstance(self.to, basestring) and " " in self.to:
+            # if self.to is a space separated list of emails, split them into a list
+            self.to = [i.strip() for i in self.to.split(" ")]
+
+
+        info = {
+            "from_email": self.from_email,
+            "to_emails": self.to,
+            "subject": self.subject,
+        }
+
+        if self.Html:
+            info["html_content"] = self.Html
+        if self.Body:
+            info["plain_text_content"] = self.Body
+
+        if not (self.Html or self.Body):
+            info['html_content'] = "&nbsp;"
+            info['plain_text_content'] = " "
+
+        message = Mail(**info)
+
         if hasattr(self, "Replyto") and self.Replyto and isinstance(self.Replyto, basestring):
             message.reply_to = self.Replyto
 
 
         # message.set_headers({'X-Priority': '2'})
         for file in self.attachments:
+
             # file is either a string or a file object
             if isinstance(file, str):
                 data = open(file, 'rb').read()
+                file_name = file
             elif hasattr(file, "seek"):
                 file.seek(0)
                 data = file.read()
+                file_name = file.name
 
             encoded = base64.b64encode(data).decode()
             attachment = Attachment()
             attachment.file_content = FileContent(encoded)
-            extension = os.path.splitext(file)[-1].strip(".")
+            extension = os.path.splitext(file_name)[-1].strip(".")
             attachment.file_type = FileType(f'application/{extension}')
-            attachment.file_name = FileName(os.path.basename(file))
+            attachment.file_name = FileName(os.path.basename(file_name))
             attachment.disposition = Disposition('attachment')
             attachment.content_id = ContentId(slugify(attachment.file_name))
             message.add_attachment(attachment)

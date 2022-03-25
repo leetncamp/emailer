@@ -20,6 +20,7 @@ except NameError:
 emailRedirect = settings.EMAIL_REDIRECT
 
 
+
 class Message:
     """The old messages class used upper case field names. To be drop in compatible, I'm supporting that here. Omit
     'From' and it will be a do-not-reply@domain rather than the default django setting found in settings.py """
@@ -118,9 +119,9 @@ class Message:
         if self.html and not self.Html:
             self.Html = self.html
 
+        global emailRedirect
 
-        if "emailRedirect" in kwargs.keys():
-            emailRedirect = kwargs.get("emailRedirect")
+        local_emailRedirect = kwargs.pop("emailRedirect", emailRedirect)
 
         """First, try to be compatible with the old To, From, and Html attributes.  Then consider if are we redirecting
         email? """
@@ -172,7 +173,7 @@ class Message:
              to 'bob@gmail.com"""
             self.to = self.to[0]
 
-        if emailRedirect:
+        if local_emailRedirect:
             email_to = self.__dict__.get("To", self.__dict__.get("to"))
             if email_to and not isinstance(self.to, basestring):
                 redirectStr = "Redirected from {0}:: ".format(", ".join(email_to))
@@ -184,7 +185,7 @@ class Message:
                 self.subject = ""
             subject = redirectStr + subRE.sub("", self.subject)
             self.subject = subject
-            self.to = emailRedirect
+            self.to = local_emailRedirect
 
 
         if hasattr(self.to, "__iter__") and isinstance(self.to, basestring) and "," in self.to:

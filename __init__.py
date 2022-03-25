@@ -172,7 +172,7 @@ class Message:
              to 'bob@gmail.com"""
             self.to = self.to[0]
 
-        if emailRedirect:
+        if "emailRedirect" in locals() and emailRedirect:
             email_to = self.__dict__.get("To", self.__dict__.get("to"))
             if email_to and not isinstance(self.to, basestring):
                 redirectStr = "Redirected from {0}:: ".format(", ".join(email_to))
@@ -201,7 +201,7 @@ class Message:
             "to_emails": self.to,
             "subject": self.subject,
         }
-
+        log.info(f"EMAILER sent a message with the following header info: {info}")
         if self.Html:
             info["html_content"] = self.Html
         if self.Body:

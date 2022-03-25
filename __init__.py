@@ -240,15 +240,17 @@ class Message:
             message.add_attachment(attachment)
 
         try:
+            raise Exception("This is a test exception")
             response = self.sendgrid_client.send(message=message)
             # TODO log or store a record of sending this message
             if response._status_code >= 300:
                 log.critial(f"SENDGRID-SEND-FAILURE: {response.subject}")
             return {'code': response._status_code}
-        except Exception as e:
+        except BaseException as e:
             tb = traceback.format_exc()
-            error_message = f"{tb}\n\n{e.body}: "
-            log.exception(error_message)
+            error_message = f"{tb}\n\n{str(e)}: "
+            infoStr = str(info)
+            log.exception(error_message + infoStr)
             return {"code": 1000, "error": tb}
 
 

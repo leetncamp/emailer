@@ -253,7 +253,7 @@ class Message:
             return {"code": 1000, "error": tb}
 
 
-    def snlSend(self):
+    def snlSend(self, *args, **kwargs):
         """Backward compatibility with an old emailer"""
-        return self.send()
+        return self.send(*args, **kwargs)
 

@@ -67,7 +67,6 @@ class Message:
         if not settings.SENDGRID_API_KEY:
             raise Exception("SENDGRID_API_KEY not defined in .env when sending a Message()")
         self.sendgrid_client = SendGridAPIClient(api_key=settings.SENDGRID_API_KEY)
-
         To = kwargs.pop("To", None)
         if To:
             to = To
@@ -114,6 +113,7 @@ class Message:
         # if we passed in an emailRedirect in the kwargs, use it to override the one we calculated above in the
         # global context
 
+        cancel_redirect = kwargs.pop("cancel_redirect", None)
 
         if self.html and not self.Html:
             self.Html = self.html
@@ -172,7 +172,7 @@ class Message:
              to 'bob@gmail.com"""
             self.to = self.to[0]
 
-        if local_emailRedirect:
+        if local_emailRedirect and not cancel_redirect:
             email_to = self.__dict__.get("To", self.__dict__.get("to"))
             if email_to and not isinstance(self.to, basestring):
                 redirectStr = "Redirected from {0}:: ".format(", ".join(email_to))
@@ -192,7 +192,7 @@ class Message:
             self.to = [i.strip() for i in self.to.split(",")]
 
         if hasattr(self.to, "__iter__") and isinstance(self.to, basestring) and " " in self.to:
-            # if self.to is a space separated list of emails, split them into a list
+            # if self.to is a space-separated list of emails, split them into a list
             self.to = [i.strip() for i in self.to.split(" ")]
 
 

@@ -201,7 +201,7 @@ class Message:
             "to_emails": self.to,
             "subject": self.subject,
         }
-        log.info(f"EMAILER sent a message with the following header info: {info}")
+        log.info(f"EMAILER message: {info}")
         if self.Html:
             info["html_content"] = self.Html
         if self.Body:

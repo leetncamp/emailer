@@ -195,6 +195,15 @@ class Message:
             # if self.to is a space-separated list of emails, split them into a list
             self.to = [i.strip() for i in self.to.split(" ")]
 
+        """SendGrid will refuse to send an email if the From address domain doesn't match the domain of the account.
+        For example, you cannot send an email with From = bob@example.com from the ICML sendgrid account.  Catch
+        this situation and make the From the standard do-no-reply address and put the From in the reply_to."""
+
+        website_domain = settings.EMAIL_DEFAULT_FROM.lower().split("@")
+        from_domain  = self.from_email.lower().split("@")
+        if website_domain  != from_domain:
+            self.reply_to = self.from_email
+            self.from_email = settings.EMAIL_DEFAULT_FROM
 
         info = {
             "from_email": self.from_email,

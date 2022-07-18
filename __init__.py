@@ -200,10 +200,16 @@ class Message:
         this situation and make the From the standard do-no-reply address and put the From in the reply_to."""
 
         website_domain = settings.EMAIL_DEFAULT_FROM.lower().split("@")
-        from_domain  = self.from_email.lower().split("@")
-        if website_domain  != from_domain:
+        from_domain = self.from_email.lower().split("@")
+        if website_domain != from_domain:
             self.reply_to = self.from_email
             self.from_email = settings.EMAIL_DEFAULT_FROM
+
+        """SendGrid will throw a bad request if self.subject is '' ."""
+
+        if not self.subject:
+            log.warning(f"Message to {self.to} rejected due to lack of Subject")
+            return {'code': 400}
 
         info = {
             "from_email": self.from_email,

@@ -197,7 +197,7 @@ class Message:
 
         """SendGrid will refuse to send an email if the From address domain doesn't match the domain of the account.
         For example, you cannot send an email with From = bob@example.com from the ICML sendgrid account.  Catch
-        this situation and make the From the standard do-no-reply address and put the From in the reply_to."""
+        this situation and make the From the standard do-not-reply address and put the From in the reply_to."""
 
         website_domain = settings.EMAIL_DEFAULT_FROM.lower().split("@")
         from_domain = self.from_email.lower().split("@")

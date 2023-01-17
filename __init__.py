@@ -74,7 +74,7 @@ class Message:
             to = kwargs.pop("to", None)
 
         From = kwargs.pop("From", None)
-        if From:
+        if From and isinstance(From, str):
             from_email = From
         Subject = kwargs.pop("Subject", None)
         if Subject:
@@ -131,14 +131,6 @@ class Message:
         if hasattr(self, "To") and (not hasattr(self, "to") or (not self.to)):
             self.to = self.To
 
-
-
-        if hasattr(self, "From") and self.from_email == settings.EMAIL_DEFAULT_FROM:
-            """When we call super in __init__, if no from_email is available, the default gets filled in at init time.
-            Test for that default"""
-
-            self.from_email = self.From
-
         if hasattr(self, "Subject") and self.subject == "":
             self.subject = self.Subject
 
@@ -175,9 +167,9 @@ class Message:
         if local_emailRedirect and not cancel_redirect:
             email_to = self.__dict__.get("To", self.__dict__.get("to"))
             if email_to and not isinstance(self.to, basestring):
-                redirectStr = "Redirected from {0}:: ".format(", ".join(email_to))
+                redirectStr = f'Redirected from {", ".join(email_to)}:: '
             elif isinstance(self.subject, basestring):
-                redirectStr = "Redirected from {0}:: ".format(email_to)
+                redirectStr = f"Redirected from {email_to}:: "
 
             subRE = re.compile(r"^Redirected\ from.*::")
             if self.subject is None:
@@ -199,8 +191,8 @@ class Message:
         For example, you cannot send an email with From = bob@example.com from the ICML sendgrid account.  Catch
         this situation and make the From the standard do-not-reply address and put the From in the reply_to."""
 
-        website_domain = settings.EMAIL_DEFAULT_FROM.lower().split("@")
-        from_domain = self.from_email.lower().split("@")
+        website_domain = settings.EMAIL_DEFAULT_FROM.lower().split("@")[1]
+        from_domain = self.from_email.lower().split("@")[1]
         if website_domain != from_domain:
             self.reply_to = self.from_email
             self.from_email = settings.EMAIL_DEFAULT_FROM

@@ -253,10 +253,18 @@ class Message:
             return {'code': response._status_code}
         except BaseException as e:
             tb = traceback.format_exc()
-            error_message = f"{tb}\n\n{str(e)}: "
+            try:
+                error_message = re.search(f"python_http_client.exceptions.ForbiddenError:\s(.*)$", tb).group(1)
+            except AttributeError:
+                error_message = f"{tb}\n\n{str(e)}: "
+            error_message = f"From: {self.from_email}. {error_message}"
             infoStr = str(info)
+            try:
+                status_code = int(re.search("HTTP\ Error\ (\d*):", error_message).group(1))
+            except (AttributeError, ValueError, TypeError):
+                status_code = 1000
             log.exception(error_message + infoStr)
-            return {"code": 1000, "error": tb}
+            return {"code": status_code, "error": error_message}
 
 
     def snlSend(self, *args, **kwargs):

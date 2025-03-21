@@ -154,8 +154,7 @@ class Message:
                 self.from_email = self.from_email[0]
 
         if self.from_email is None or self.from_email == "":
-            """Looks like no From was specified. Try to guess the domain. We are too early on the model page get a 
-            conference object at this point so guess. Maybe this can be moved to just below Conferences. """
+            """Looks like no From was specified. """
 
             self.from_email = settings.EMAIL_DEFAULT_FROM
 

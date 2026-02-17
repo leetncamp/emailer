@@ -1,21 +1,15 @@
 import base64
 import re
 import traceback
-from pdb import set_trace as debug
 import os
-import markdown2
 from django.conf import settings
 from django.utils.text import slugify
 from markdownify import markdownify
-from sendgrid import SendGridAPIClient, Disposition, FileName, FileType, FileContent, ContentId
+from sendgrid import SendGridAPIClient, Disposition, FileName, FileType, FileContent, ContentId, Bcc, Cc
 from sendgrid.helpers.mail import From, To, Subject, PlainTextContent, HtmlContent, Mail, Attachment
 import logging
 log = logging.getLogger(__name__)
 
-try:
-    basestring
-except NameError:
-    basestring = str
 
 emailRedirect = settings.EMAIL_REDIRECT
 
@@ -63,6 +57,8 @@ class Message:
         self.from_email = ""
         self.subject = ""
         self.to = ""
+        self.bcc = ""
+        self.cc = ""
         self.attachments = []
         if not settings.SENDGRID_API_KEY:
             raise Exception("SENDGRID_API_KEY not defined in .env when sending a Message()")
@@ -125,7 +121,8 @@ class Message:
         """First, try to be compatible with the old To, From, and Html attributes.  Then consider if are we redirecting
         email? """
 
-        if not settings.EMAIL_DEFAULT_FROM:  # The raise below would happen if EMAIL_DEFAULT_FROM were defined as None or ""
+        if not settings.EMAIL_DEFAULT_FROM:
+            # The raise below would happen if EMAIL_DEFAULT_FROM were defined as None or ""
             raise Exception("Define settings.EMAIL_DEFAULT_FROM")
 
         if hasattr(self, "To") and (not hasattr(self, "to") or (not self.to)):
@@ -165,9 +162,9 @@ class Message:
 
         if local_emailRedirect and not cancel_redirect:
             email_to = self.__dict__.get("To", self.__dict__.get("to"))
-            if email_to and not isinstance(self.to, basestring):
+            if email_to and not isinstance(self.to, str):
                 redirectStr = f'Redirected from {", ".join(email_to)}:: '
-            elif isinstance(self.subject, basestring):
+            elif isinstance(self.subject, str):
                 redirectStr = f"Redirected from {email_to}:: "
 
             subRE = re.compile(r"^Redirected\ from.*::")
@@ -178,11 +175,11 @@ class Message:
             self.to = local_emailRedirect
 
 
-        if hasattr(self.to, "__iter__") and isinstance(self.to, basestring) and "," in self.to:
+        if hasattr(self.to, "__iter__") and isinstance(self.to, str) and "," in self.to:
             # if self.to is a comma separated list of emails, split them into a list
             self.to = [i.strip() for i in self.to.split(",")]
 
-        if hasattr(self.to, "__iter__") and isinstance(self.to, basestring) and " " in self.to:
+        if hasattr(self.to, "__iter__") and isinstance(self.to, str) and " " in self.to:
             # if self.to is a space-separated list of emails, split them into a list
             self.to = [i.strip() for i in self.to.split(" ")]
 
@@ -218,8 +215,13 @@ class Message:
             info['plain_text_content'] = " "
 
         message = Mail(**info)
+        if not (local_emailRedirect and not cancel_redirect):
+            if hasattr(self, "bcc") and self.bcc:
+                message.add_bcc(Bcc(self.bcc))
+            if hasattr(self, "cc") and self.cc:
+                message.add_cc(Cc(self.cc))
 
-        if hasattr(self, "Replyto") and self.Replyto and isinstance(self.Replyto, basestring):
+        if hasattr(self, "Replyto") and self.Replyto and isinstance(self.Replyto, str):
             message.reply_to = self.Replyto
 
 

@@ -2,6 +2,8 @@ import base64
 import re
 import traceback
 import os
+from html import escape
+
 from django.conf import settings
 from django.utils.text import slugify
 from markdownify import markdownify
@@ -87,7 +89,7 @@ class Message:
         super().__init__()
 
     def __str__(self):
-        return "{0} : {1}".format(str(self.to), self.subject)
+        return f"{escape(self.to)} : {escape(self.subject)}"
 
     def set_delete_header(self):
         """Insert a header into this email that will cause it to be deleted by the procmail rule:

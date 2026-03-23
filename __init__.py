@@ -208,7 +208,7 @@ class Message:
         elif hasattr(self.to, "__iter__"):
             cleaned = []
             for recipient in self.to:
-                if isinstance(recipient, basestring):
+                if isinstance(recipient, str):
                     cleaned.append(recipient.strip())
                 elif hasattr(recipient, 'email'):
                     cleaned.append(recipient.email.strip())

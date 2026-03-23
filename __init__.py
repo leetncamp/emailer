@@ -201,9 +201,26 @@ class Message:
             log.warning(f"Message to {self.to} rejected due to lack of Subject")
             return {'code': 400}
 
+        # Ensure self.to is a flat list of email address strings.
+        # Callers sometimes pass User objects, querysets, or nested structures.
+        if isinstance(self.to, basestring):
+            to_emails = self.to
+        elif hasattr(self.to, "__iter__"):
+            cleaned = []
+            for recipient in self.to:
+                if isinstance(recipient, basestring):
+                    cleaned.append(recipient.strip())
+                elif hasattr(recipient, 'email'):
+                    cleaned.append(recipient.email.strip())
+                else:
+                    log.warning(f"EMAILER: skipping unrecognized recipient type {type(recipient)}: {recipient!r}")
+            to_emails = cleaned if len(cleaned) != 1 else cleaned[0]
+        else:
+            to_emails = str(self.to)
+
         info = {
             "from_email": self.from_email,
-            "to_emails": self.to,
+            "to_emails": to_emails,
             "subject": self.subject,
         }
         log.info(f"EMAILER message: {info}")

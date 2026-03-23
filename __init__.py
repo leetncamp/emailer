@@ -203,7 +203,7 @@ class Message:
 
         # Ensure self.to is a flat list of email address strings.
         # Callers sometimes pass User objects, querysets, or nested structures.
-        if isinstance(self.to, basestring):
+        if isinstance(self.to, str):
             to_emails = self.to
         elif hasattr(self.to, "__iter__"):
             cleaned = []
@@ -217,6 +217,23 @@ class Message:
             to_emails = cleaned if len(cleaned) != 1 else cleaned[0]
         else:
             to_emails = str(self.to)
+
+        # Validate email addresses — catch OpenReview profiles passed as emails
+        def _check_email(addr):
+            if isinstance(addr, str) and '@' not in addr and addr.startswith('~'):
+                log.warning(f"emailer received an OpenReview profile rather than an email address: {addr}")
+                return False
+            return True
+
+        if isinstance(to_emails, str):
+            if not _check_email(to_emails):
+                return {'code': 400}
+        elif isinstance(to_emails, list):
+            to_emails = [e for e in to_emails if _check_email(e)]
+            if not to_emails:
+                return {'code': 400}
+            if len(to_emails) == 1:
+                to_emails = to_emails[0]
 
         info = {
             "from_email": self.from_email,

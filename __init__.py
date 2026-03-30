@@ -292,13 +292,13 @@ class Message:
         except BaseException as e:
             tb = traceback.format_exc()
             try:
-                error_message = re.search(f"python_http_client.exceptions.ForbiddenError:\s(.*)$", tb).group(1)
+                error_message = re.search(r"python_http_client.exceptions.ForbiddenError:\s(.*)$", tb).group(1)
             except AttributeError:
                 error_message = f"{tb}\n\n{str(e)}: "
             error_message = f"From: {self.from_email}. {error_message}"
             infoStr = str(info)
             try:
-                status_code = int(re.search("HTTP\ Error\ (\d*):", error_message).group(1))
+                status_code = int(re.search(r"HTTP\ Error\ (\d*):", error_message).group(1))
             except (AttributeError, ValueError, TypeError):
                 status_code = 1000
             log.exception(error_message + infoStr)

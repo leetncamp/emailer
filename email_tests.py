@@ -7,143 +7,141 @@ testing the redirect."""
 
 import os
 import sys
-from django.core.wsgi import get_wsgi_application
-from django.conf import settings
-import environ
 from argparse import ArgumentParser
-from django.contrib.sessions.backends.db import SessionStore
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-print(BASE_DIR)
-sys.path.append(BASE_DIR)
-os.environ['DJANGO_SETTINGS_MODULE'] = 'djnipscc.settings'
-application = get_wsgi_application()
-from pdb import set_trace as debug
 
-parser = ArgumentParser()
-parser.add_argument(
-    "recipients", nargs="*", default='lee@eventhosts.cc lee@salk.edu',
-    help="To fully test, pass in two email addresses, space separated. Only supply email not e.g Bob Smith <bob@smith.org>")
-ns = parser.parse_args()
+def main():
+    from django.core.wsgi import get_wsgi_application
+    import environ
 
-DATABASE = settings.DATABASE
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    print(BASE_DIR)
+    sys.path.append(BASE_DIR)
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'project.settings')
+    get_wsgi_application()
 
-from emailer import Message
+    parser = ArgumentParser()
+    parser.add_argument(
+        "recipients", nargs="*", default='lee@eventhosts.cc lee@salk.edu',
+        help="To fully test, pass in two email addresses, space separated. Only supply email not e.g Bob Smith <bob@smith.org>")
+    ns = parser.parse_args()
 
-env = environ.FileAwareEnv(DEBUG=(bool, False))
+    from emailer import Message
 
-env_file = env('ENV_PATH', default='.env')
+    env = environ.FileAwareEnv(DEBUG=(bool, False))
+    env_file = env('ENV_PATH', default='.env')
 
-if isinstance(ns.recipients, list):
-    recipients = ns.recipients
-else:
-    recipients = [ns.recipients]
-    if len(recipients) == 1 and " " in recipients[0]:
-        recipients = recipients[0].split()
+    if isinstance(ns.recipients, list):
+        recipients = ns.recipients
+    else:
+        recipients = [ns.recipients]
+        if len(recipients) == 1 and " " in recipients[0]:
+            recipients = recipients[0].split()
 
-hold = True
+    hold = True
 
-if hold:
-    subject = "1. Testing To with an email string"
+    if hold:
+        subject = "1. Testing To with an email string"
+        print(subject)
+        msg = Message(To=recipients[0], Subject=subject)
+        result = msg.send(emailRedirect=None)
+
+        subject = "2. Testing To with a list of one recipients"
+        print(subject)
+        msg = Message(To=recipients[0:1], Subject=subject)
+        result = msg.send(emailRedirect=None)
+
+        subject = "3. Testing msg.To with a list of one recipients"
+        print(subject)
+        msg = Message(Subject=subject)
+        msg.To = recipients
+        result = msg.send(emailRedirect=None)
+
+        subject = "4. Testing 'to' lowercase with a list of one recipient"
+        print(subject)
+        msg = Message(to=recipients[0:1], Subject=subject)
+        result = msg.send(emailRedirect=None)
+
+        subject = "5. Testing Html with no body and multiple recipients"
+        print(subject)
+        msg = Message(to=recipients,
+                      Subject=subject,
+                      Html="This is <strong>bold.</strong>."
+                      )
+        result = msg.send(emailRedirect=None)
+
+        subject = '6. Testing text body'
+        print(subject)
+        msg = Message(to=recipients,
+                      Subject=subject,
+                      Body="This is plain text.",
+                      )
+        result = msg.send(emailRedirect=None)
+
+        subject = '7. Testing msg.Body'
+        print(subject)
+        msg = Message(to=recipients,
+                      Subject=subject,
+                      )
+        msg.Body = "This body was added later"
+        result = msg.send(emailRedirect=None)
+
+        subject = '8. Testing msg.Html'
+        print(subject)
+        msg = Message(to=recipients,
+                      Subject=subject,
+                      )
+        msg.Html = "This <strong>HTML</strong> body was added after initialization"
+        result = msg.send(emailRedirect=None)
+
+        subject = '9. Testing msg.html'
+        print(subject)
+        msg = Message(to=recipients,
+                      Subject=subject,
+                      )
+        msg.html = "This <strong>HTML</strong> body was added after initialization"
+        result = msg.send(emailRedirect=None)
+
+
+
+        subject = '10. Testing attachments as filenames'
+        print(subject)
+        msg = Message(to=recipients,
+                      Subject=subject,
+                      Body="Note that the current working directory of the Mailer class is settings.BASE_DIR"
+                      )
+        msg.attach("emailer/test_image1.jpg")
+        msg.attach("emailer/test_image2.jpg")
+        result = msg.send(emailRedirect=None)
+
+        subject = '11. Testing attachments as file objects'
+        print(subject)
+        msg = Message(to=recipients,
+                      Subject=subject,
+                      Body="Note that the current working directory of the Mailer class is settings.BASE_DIR"
+                      )
+        msg.attach(open("emailer/test_image1.jpg", 'rb'))
+        msg.attach(open("emailer/test_image2.jpg", 'rb'))
+        result = msg.send(emailRedirect=None)
+
+    subject = '12. Testing comma separated list of emails in To'
     print(subject)
-    msg = Message(To=recipients[0], Subject=subject)
-    result = msg.send(emailRedirect=None)
-
-    subject = "2. Testing To with a list of one recipients"
-    print(subject)
-    msg = Message(To=recipients[0:1], Subject=subject)
-    result = msg.send(emailRedirect=None)
-
-    subject = "3. Testing msg.To with a list of one recipients"
-    print(subject)
-    msg = Message(Subject=subject)
-    msg.To = recipients
-    result = msg.send(emailRedirect=None)
-
-    subject = "4. Testing 'to' lowercase with a list of one recipient"
-    print(subject)
-    msg = Message(to=recipients[0:1], Subject=subject)
-    result = msg.send(emailRedirect=None)
-
-    subject = "5. Testing Html with no body and multiple recipients"
-    print(subject)
-    msg = Message(to=recipients,
+    comma_recipients = ",".join(recipients)
+    msg = Message(to=comma_recipients,
                   Subject=subject,
-                  Html="This is <strong>bold.</strong>."
+                  Body=f"The recipients were {recipients}"
                   )
     result = msg.send(emailRedirect=None)
 
-    subject = '6. Testing text body'
+    subject = '13. Testing space separated list of emails in To'
     print(subject)
-    msg = Message(to=recipients,
+    space_recipients = " ".join(recipients)
+    msg = Message(to=space_recipients,
                   Subject=subject,
-                  Body="This is plain text.",
+                  Body=f"The recipients were {recipients}"
                   )
     result = msg.send(emailRedirect=None)
 
-    subject = '7. Testing msg.Body'
-    print(subject)
-    msg = Message(to=recipients,
-                  Subject=subject,
-                  )
-    msg.Body = "This body was added later"
-    result = msg.send(emailRedirect=None)
 
-    subject = '8. Testing msg.Html'
-    print(subject)
-    msg = Message(to=recipients,
-                  Subject=subject,
-                  )
-    msg.Html = "This <strong>HTML</strong> body was added after initialization"
-    result = msg.send(emailRedirect=None)
-
-    subject = '9. Testing msg.html'
-    print(subject)
-    msg = Message(to=recipients,
-                  Subject=subject,
-                  )
-    msg.html = "This <strong>HTML</strong> body was added after initialization"
-    result = msg.send(emailRedirect=None)
-
-
-
-    subject = '10. Testing attachments as filenames'
-    print(subject)
-    msg = Message(to=recipients,
-                  Subject=subject,
-                  Body="Note that the current working directory of the Mailer class is settings.BASE_DIR"
-                  )
-    msg.attach("emailer/test_image1.jpg")
-    msg.attach("emailer/test_image2.jpg")
-    result = msg.send(emailRedirect=None)
-
-    subject = '11. Testing attachments as file objects'
-    print(subject)
-    msg = Message(to=recipients,
-                  Subject=subject,
-                  Body="Note that the current working directory of the Mailer class is settings.BASE_DIR"
-                  )
-    msg.attach(open("emailer/test_image1.jpg", 'rb'))
-    msg.attach(open("emailer/test_image2.jpg", 'rb'))
-    result = msg.send(emailRedirect=None)
-
-subject = '12. Testing comma separated list of emails in To'
-print(subject)
-comma_recipients = ",".join(recipients)
-msg = Message(to=comma_recipients,
-              Subject=subject,
-              Body=f"The recipients were {recipients}"
-              )
-result = msg.send(emailRedirect=None)
-
-subject = '13. Testing space separated list of emails in To'
-print(subject)
-space_recipients = " ".join(recipients)
-msg = Message(to=space_recipients,
-              Subject=subject,
-              Body=f"The recipients were {recipients}"
-              )
-result = msg.send(emailRedirect=None)
-
-
-
+if __name__ == "__main__":
+    main()

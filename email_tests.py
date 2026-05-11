@@ -22,7 +22,7 @@ def main():
 
     parser = ArgumentParser()
     parser.add_argument(
-        "recipients", nargs="*", default='lee@eventhosts.cc lee@salk.edu',
+        "recipients", nargs="*", default='lee@eventhosts.cc lee@snl.salk.edu',
         help="To fully test, pass in two email addresses, space separated. Only supply email not e.g Bob Smith <bob@smith.org>")
     ns = parser.parse_args()
 

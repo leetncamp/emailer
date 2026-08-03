@@ -320,15 +320,20 @@ class Message:
             response = self.sendgrid_client.send(message=message)
             # TODO log or store a record of sending this message
             if response._status_code >= 300:
-                log.critial(f"SENDGRID-SEND-FAILURE: {response.subject}")
+                log.critical(f"SENDGRID-SEND-FAILURE: {response.subject}")
             return {'code': response._status_code}
         except BaseException as e:
             tb = traceback.format_exc()
+            sg_body = getattr(e, "body", b"")
             try:
-                error_message = re.search(r"python_http_client.exceptions.ForbiddenError:\s(.*)$", tb).group(1)
+                sg_body = sg_body.decode("utf-8", "replace") if isinstance(sg_body, (bytes, bytearray)) else str(sg_body)
+            except Exception:
+                sg_body = ""
+            try:
+                error_message = re.search(r"python_http_client\.exceptions\.\w+Error:\s(.*)$", tb).group(1)
             except AttributeError:
                 error_message = f"{tb}\n\n{str(e)}: "
-            error_message = f"From: {self.from_email}. {error_message}"
+            error_message = f"From: {self.from_email}. {error_message} SG_BODY={sg_body}"
             infoStr = str(info)
             try:
                 status_code = int(re.search(r"HTTP\ Error\ (\d*):", error_message).group(1))

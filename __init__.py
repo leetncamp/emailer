@@ -8,7 +8,7 @@ from django.conf import settings
 from django.utils.text import slugify
 from markdownify import markdownify
 from sendgrid import SendGridAPIClient, Disposition, FileName, FileType, FileContent, ContentId, Bcc, Cc
-from sendgrid.helpers.mail import From, To, Subject, PlainTextContent, HtmlContent, Mail, Attachment
+from sendgrid.helpers.mail import From, To, Subject, PlainTextContent, HtmlContent, Mail, Attachment, MailSettings, BypassSpamManagement
 import logging
 log = logging.getLogger(__name__)
 
@@ -284,6 +284,9 @@ class Message:
             # log.info("EMAILER message (RFC 822):\n" + "\n".join(deduped) + "\n\n" + body)
 
         message = Mail(**info)
+        # Deliver these even to addresses on SendGrid's Spam Reports suppression list.
+        if any(word in self.subject.lower() for word in ("registration", "receipt", "important")):
+            message.mail_settings = MailSettings(bypass_spam_management=BypassSpamManagement(True))
         if not (local_emailRedirect and not cancel_redirect):
             if hasattr(self, "bcc") and self.bcc:
                 message.add_bcc(Bcc(self.bcc))
